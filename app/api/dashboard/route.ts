@@ -63,9 +63,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const days = searchParams.get('days') ?? '30'
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
 
   const [googleResult, metaResult] = await Promise.allSettled([
     fetch(`${baseUrl}/api/google-ads?days=${days}`, { cache: 'no-store' }).then((r) => r.json()),
