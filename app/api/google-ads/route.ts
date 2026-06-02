@@ -70,7 +70,7 @@ async function runGaqlQuery(
     headers: {
       Authorization: `Bearer ${accessToken}`,
       'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
-      'login-customer-id': process.env.GOOGLE_ADS_CUSTOMER_ID!,
+      'login-customer-id': process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ?? process.env.GOOGLE_ADS_CUSTOMER_ID!,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ query }),
