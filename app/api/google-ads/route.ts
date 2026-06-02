@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com/v19'
+const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com/v20'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 
 interface CampaignRow {
