@@ -85,18 +85,26 @@ async function runGaqlQuery(
   const text = await res.text()
   const rows: unknown[] = []
 
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed === '[' || trimmed === ']') continue
-    const cleaned = trimmed.replace(/^,/, '')
-    if (!cleaned) continue
-    try {
-      const parsed = JSON.parse(cleaned)
-      if (parsed.results && Array.isArray(parsed.results)) {
-        rows.push(...parsed.results)
+  try {
+    const batches = JSON.parse(text)
+    if (Array.isArray(batches)) {
+      for (const batch of batches) {
+        if (batch.results && Array.isArray(batch.results)) {
+          rows.push(...batch.results)
+        }
       }
-    } catch {
-      // skip non-JSON lines
+    }
+  } catch {
+    // fallback: parse line by line for chunked responses
+    for (const line of text.split('\n')) {
+      const trimmed = line.trim().replace(/^,/, '')
+      if (!trimmed || trimmed === '[' || trimmed === ']') continue
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed.results && Array.isArray(parsed.results)) {
+          rows.push(...parsed.results)
+        }
+      } catch { /* skip */ }
     }
   }
 
