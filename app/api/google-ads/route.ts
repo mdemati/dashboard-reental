@@ -6,9 +6,9 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 interface CampaignRow {
   campaign: { name: string; id: string }
   metrics: {
-    cost_micros: string
+    costMicros: string
     conversions: number
-    cost_per_conversion: number
+    costPerConversion: number
     impressions: string
     clicks: string
     ctr: number
@@ -18,7 +18,7 @@ interface CampaignRow {
 interface DailyRow {
   segments: { date: string }
   metrics: {
-    cost_micros: string
+    costMicros: string
     conversions: number
     clicks: string
     impressions: string
@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
     ])
 
     const campaigns = (campaignRows as CampaignRow[]).map((row) => {
-      const spend = (parseInt(String(row.metrics.cost_micros ?? '0'), 10) || 0) / 1_000_000
+      const spend = (parseInt(String(row.metrics.costMicros ?? '0'), 10) || 0) / 1_000_000
       const conversions = row.metrics.conversions ?? 0
       const impressions = parseInt(String(row.metrics.impressions ?? '0'), 10) || 0
       const clicks = parseInt(String(row.metrics.clicks ?? '0'), 10) || 0
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
       if (!dailyMap[date]) {
         dailyMap[date] = { date, spend: 0, conversions: 0, clicks: 0, impressions: 0 }
       }
-      dailyMap[date].spend += (parseInt(String(row.metrics.cost_micros ?? '0'), 10) || 0) / 1_000_000
+      dailyMap[date].spend += (parseInt(String(row.metrics.costMicros ?? '0'), 10) || 0) / 1_000_000
       dailyMap[date].conversions += row.metrics.conversions ?? 0
       dailyMap[date].clicks += parseInt(String(row.metrics.clicks ?? '0'), 10) || 0
       dailyMap[date].impressions += parseInt(String(row.metrics.impressions ?? '0'), 10) || 0
