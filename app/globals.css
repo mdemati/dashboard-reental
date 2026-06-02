@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-gold: #FCA311;
+  --brand-dark: #1F2937;
+  --brand-light: #FEEDCF;
+  --meta-blue: #1877F2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #f9fafb;
+  color: #1F2937;
+}
+
+@layer utilities {
+  .skeleton {
+    @apply bg-gray-200 animate-pulse rounded;
+  }
+}
