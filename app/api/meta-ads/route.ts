@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { unstable_cache } from 'next/cache'
 
 const META_BASE = 'https://graph.facebook.com/v20.0'
 const ACCOUNT_ID = 'act_6633565470069747'
@@ -112,108 +113,120 @@ async function fetchAccountCurrency(token: string): Promise<string> {
   }
 }
 
+async function fetchMetaAdsData(days: number) {
+  const preset = daysToMetaPreset(days)
+  const token = process.env.META_ACCESS_TOKEN!
+
+  const campaignUrl =
+    `${META_BASE}/${ACCOUNT_ID}/insights` +
+    `?fields=campaign_name,campaign_id,${INSIGHT_FIELDS}` +
+    `&level=campaign` +
+    `&date_preset=${preset}` +
+    `&access_token=${token}`
+
+  const adsetUrl =
+    `${META_BASE}/${ACCOUNT_ID}/insights` +
+    `?fields=campaign_name,campaign_id,adset_name,adset_id,${INSIGHT_FIELDS}` +
+    `&level=adset` +
+    `&date_preset=${preset}` +
+    `&access_token=${token}`
+
+  const adUrl =
+    `${META_BASE}/${ACCOUNT_ID}/insights` +
+    `?fields=campaign_name,campaign_id,adset_name,adset_id,ad_name,ad_id,${INSIGHT_FIELDS}` +
+    `&level=ad` +
+    `&date_preset=${preset}` +
+    `&access_token=${token}`
+
+  const dailyUrl =
+    `${META_BASE}/${ACCOUNT_ID}/insights` +
+    `?fields=spend,actions` +
+    `&time_increment=1` +
+    `&date_preset=${preset}` +
+    `&access_token=${token}`
+
+  const [campaignInsights, adsetInsights, adInsights, dailyInsights, currency] = await Promise.all([
+    fetchAllPages<MetaInsightRow>(campaignUrl),
+    fetchAllPages<MetaInsightRow>(adsetUrl),
+    fetchAllPages<MetaInsightRow>(adUrl),
+    fetchAllPages<MetaDailyInsight>(dailyUrl),
+    fetchAccountCurrency(token),
+  ])
+
+  const campaigns = campaignInsights.map((row) => {
+    const metrics = buildInsightRow(row, days)
+    return { name: row.campaign_name ?? '', id: row.campaign_id ?? '', ...metrics }
+  })
+
+  const adsets = adsetInsights.map((row) => {
+    const metrics = buildInsightRow(row, days)
+    return {
+      name: row.adset_name ?? '',
+      id: row.adset_id ?? '',
+      campaignName: row.campaign_name ?? '',
+      campaignId: row.campaign_id ?? '',
+      ...metrics,
+    }
+  })
+
+  const ads = adInsights.map((row) => {
+    const metrics = buildInsightRow(row, days)
+    return {
+      name: row.ad_name ?? '',
+      id: row.ad_id ?? '',
+      adsetName: row.adset_name ?? '',
+      adsetId: row.adset_id ?? '',
+      campaignName: row.campaign_name ?? '',
+      campaignId: row.campaign_id ?? '',
+      ...metrics,
+    }
+  })
+
+  const daily = dailyInsights
+    .map((row) => ({
+      date: row.date_start,
+      spend: parseFloat(row.spend ?? '0') || 0,
+      conversions: countLeads(row.actions),
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+
+  const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0)
+  const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0)
+  const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0)
+  const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0)
+  const blendedCpa = totalConversions > 0 ? totalSpend / totalConversions : 0
+  const blendedCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
+
+  return {
+    currency,
+    summary: {
+      spend: totalSpend,
+      conversions: totalConversions,
+      cpa: blendedCpa,
+      impressions: totalImpressions,
+      clicks: totalClicks,
+      ctr: blendedCtr,
+    },
+    campaigns,
+    adsets,
+    ads,
+    daily,
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get('days') ?? '30', 10)
-    const preset = daysToMetaPreset(days)
-    const token = process.env.META_ACCESS_TOKEN!
 
-    const campaignUrl =
-      `${META_BASE}/${ACCOUNT_ID}/insights` +
-      `?fields=campaign_name,campaign_id,${INSIGHT_FIELDS}` +
-      `&level=campaign` +
-      `&date_preset=${preset}` +
-      `&access_token=${token}`
+    const getCachedData = unstable_cache(
+      () => fetchMetaAdsData(days),
+      [`meta-ads-${days}`],
+      { revalidate: 86400, tags: [`meta-ads`, `meta-ads-${days}`] }
+    )
 
-    const adsetUrl =
-      `${META_BASE}/${ACCOUNT_ID}/insights` +
-      `?fields=campaign_name,campaign_id,adset_name,adset_id,${INSIGHT_FIELDS}` +
-      `&level=adset` +
-      `&date_preset=${preset}` +
-      `&access_token=${token}`
-
-    const adUrl =
-      `${META_BASE}/${ACCOUNT_ID}/insights` +
-      `?fields=campaign_name,campaign_id,adset_name,adset_id,ad_name,ad_id,${INSIGHT_FIELDS}` +
-      `&level=ad` +
-      `&date_preset=${preset}` +
-      `&access_token=${token}`
-
-    const dailyUrl =
-      `${META_BASE}/${ACCOUNT_ID}/insights` +
-      `?fields=spend,actions` +
-      `&time_increment=1` +
-      `&date_preset=${preset}` +
-      `&access_token=${token}`
-
-    const [campaignInsights, adsetInsights, adInsights, dailyInsights, currency] = await Promise.all([
-      fetchAllPages<MetaInsightRow>(campaignUrl),
-      fetchAllPages<MetaInsightRow>(adsetUrl),
-      fetchAllPages<MetaInsightRow>(adUrl),
-      fetchAllPages<MetaDailyInsight>(dailyUrl),
-      fetchAccountCurrency(token),
-    ])
-
-    const campaigns = campaignInsights.map((row) => {
-      const metrics = buildInsightRow(row, days)
-      return { name: row.campaign_name ?? '', id: row.campaign_id ?? '', ...metrics }
-    })
-
-    const adsets = adsetInsights.map((row) => {
-      const metrics = buildInsightRow(row, days)
-      return {
-        name: row.adset_name ?? '',
-        id: row.adset_id ?? '',
-        campaignName: row.campaign_name ?? '',
-        campaignId: row.campaign_id ?? '',
-        ...metrics,
-      }
-    })
-
-    const ads = adInsights.map((row) => {
-      const metrics = buildInsightRow(row, days)
-      return {
-        name: row.ad_name ?? '',
-        id: row.ad_id ?? '',
-        adsetName: row.adset_name ?? '',
-        adsetId: row.adset_id ?? '',
-        campaignName: row.campaign_name ?? '',
-        campaignId: row.campaign_id ?? '',
-        ...metrics,
-      }
-    })
-
-    const daily = dailyInsights
-      .map((row) => ({
-        date: row.date_start,
-        spend: parseFloat(row.spend ?? '0') || 0,
-        conversions: countLeads(row.actions),
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date))
-
-    const totalSpend = campaigns.reduce((s, c) => s + c.spend, 0)
-    const totalConversions = campaigns.reduce((s, c) => s + c.conversions, 0)
-    const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0)
-    const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0)
-    const blendedCpa = totalConversions > 0 ? totalSpend / totalConversions : 0
-    const blendedCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
-
-    return NextResponse.json({
-      currency,
-      summary: {
-        spend: totalSpend,
-        conversions: totalConversions,
-        cpa: blendedCpa,
-        impressions: totalImpressions,
-        clicks: totalClicks,
-        ctr: blendedCtr,
-      },
-      campaigns,
-      adsets,
-      ads,
-      daily,
-    })
+    const data = await getCachedData()
+    return NextResponse.json(data)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('[meta-ads] Error:', message)
