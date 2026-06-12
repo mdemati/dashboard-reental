@@ -1,17 +1,17 @@
 {
-  "name": "reental-ppc-dashboard",
+  "name": "amapola-menorca-website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "14.2.5",
     "react": "^18",
-    "react-dom": "^18",
-    "recharts": "^2.12.7"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -3,23 +3,91 @@
 @tailwind utilities;
 
 :root {
-  --brand-gold: #FCA311;
-  --brand-dark: #1F2937;
-  --brand-light: #FEEDCF;
-  --meta-blue: #1877F2;
+  --clay: #c8956b;
+  --sage: #8b9d77;
+  --terracotta: #b85c38;
+  --cream: #faf7f0;
+  --charcoal: #2c2c2c;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+  /* Evita CLS por barra de scroll en escritorio */
+  scrollbar-gutter: stable;
+}
+
 body {
-  background-color: #f9fafb;
-  color: #1F2937;
+  background-color: var(--cream);
+  color: var(--charcoal);
+  /* Mínimo 16px en móvil para legibilidad */
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Respeta usuarios con preferencia de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  .container-amapola {
+    @apply mx-auto w-full max-w-content px-5 sm:px-6 lg:px-8;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-clay-600;
+  }
+
+  .link-underline {
+    @apply relative inline-flex items-center gap-1 font-medium text-terracotta transition-colors hover:text-terracotta-700;
+  }
+
+  /* Botones */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-600 focus-visible:ring-offset-2 focus-visible:ring-offset-cream;
+  }
+  .btn-primary {
+    @apply btn bg-terracotta text-cream hover:bg-terracotta-600 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply btn border border-clay-400 bg-transparent text-charcoal hover:border-clay-600 hover:bg-clay-50;
+  }
+  .btn-ghost {
+    @apply btn bg-cream/80 text-charcoal hover:bg-white;
+  }
 }
 
 @layer utilities {
-  .skeleton {
-    @apply bg-gray-200 animate-pulse rounded;
+  .text-balance {
+    text-wrap: balance;
+  }
+  /* Animación de entrada sutil para secciones */
+  .reveal {
+    animation: reveal 0.7s var(--tw-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  }
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
