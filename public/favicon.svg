@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Amapola Menorca">
+  <rect width="64" height="64" rx="14" fill="#FAF7F0"/>
+  <g transform="translate(32 33)">
+    <!-- Flor de amapola estilizada -->
+    <circle cx="0" cy="-12" r="9" fill="#B85C38"/>
+    <circle cx="11" cy="-3" r="9" fill="#C8956B"/>
+    <circle cx="7" cy="11" r="9" fill="#B85C38"/>
+    <circle cx="-7" cy="11" r="9" fill="#C8956B"/>
+    <circle cx="-11" cy="-3" r="9" fill="#B85C38"/>
+    <circle cx="0" cy="0" r="6" fill="#2C2C2C"/>
+  </g>
+</svg>
